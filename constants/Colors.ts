@@ -1,19 +1,29 @@
-const tintColorLight = '#2f95dc';
-const tintColorDark = '#fff';
-
 export default {
-  light: {
-    text: '#000',
-    background: '#fff',
-    tint: tintColorLight,
-    tabIconDefault: '#ccc',
-    tabIconSelected: tintColorLight,
-  },
-  dark: {
-    text: '#fff',
-    background: '#000',
-    tint: tintColorDark,
-    tabIconDefault: '#ccc',
-    tabIconSelected: tintColorDark,
-  },
+  primary: '#1B5E20',
+  primaryLight: '#4CAF50',
+  primaryDark: '#0D3B0F',
+  accent: '#FF9800',
+  background: '#F5F5F5',
+  card: '#FFFFFF',
+  text: '#212121',
+  textLight: '#757575',
+  textWhite: '#FFFFFF',
+  border: '#E0E0E0',
+  income: '#2E7D32',
+  expense: '#C62828',
+  udhar: '#E65100',
+  udharReturn: '#1565C0',
+  danger: '#D32F2F',
+  success: '#388E3C',
+  shadow: '#00000020',
+  categories: {
+    Food: '#E53935',
+    Bills: '#8E24AA',
+    Travel: '#1E88E5',
+    Shopping: '#FB8C00',
+    Health: '#00897B',
+    Education: '#5E35B1',
+    Entertainment: '#D81B60',
+    Other: '#546E7A',
+  } as Record<string, string>,
 };

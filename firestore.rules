@@ -1,0 +1,25 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Family data — all members can read/write within their family
+    match /families/{familyId} {
+      allow read, write: if true;
+
+      match /members/{memberId} {
+        allow read, write: if true;
+      }
+
+      match /expenses/{expenseId} {
+        allow read, write: if true;
+      }
+
+      match /income/{incomeId} {
+        allow read, write: if true;
+      }
+
+      match /udhar/{udharId} {
+        allow read, write: if true;
+      }
+    }
+  }
+}
