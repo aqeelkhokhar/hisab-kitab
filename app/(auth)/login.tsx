@@ -1,8 +1,16 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, Alert, KeyboardAvoidingView, Platform } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import {
+  View,
+  Text,
+  TextInput,
+  StyleSheet,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+} from 'react-native';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import PinInput from '../../components/ui/PinInput';
 import Button from '../../components/ui/Button';
 import { useAuth } from '../../context/AuthContext';
 import { loginWithPin } from '../../firebase/firestore';
@@ -12,26 +20,42 @@ export default function LoginScreen() {
   const router = useRouter();
   const { login } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [name, setName] = useState('');
   const [pin, setPin] = useState('');
 
-  async function handlePinComplete(enteredPin: string) {
-    setPin(enteredPin);
+  useEffect(() => {
+    AsyncStorage.getItem('memberName').then((stored) => {
+      if (stored) setName(stored);
+    });
+  }, []);
+
+  async function handleLogin() {
+    if (!name.trim()) {
+      Alert.alert('Error', 'Please enter your name');
+      return;
+    }
+    if (pin.length !== 4) {
+      Alert.alert('Error', 'PIN must be exactly 4 digits');
+      return;
+    }
+
     setLoading(true);
     try {
-      const familyId = await AsyncStorage.getItem('familyId');
-      const memberName = await AsyncStorage.getItem('memberName');
+      const storedFamilyId = await AsyncStorage.getItem('familyId');
 
-      if (!familyId || !memberName) {
-        // First time user — go to setup
-        router.replace('/(auth)/setup');
-        return;
+      // Save PIN for potential join/create family later
+      await AsyncStorage.setItem('tempPin', pin);
+
+      if (storedFamilyId) {
+        // Returning user with family - verify PIN against Firestore
+        const result = await loginWithPin(storedFamilyId, name.trim(), pin);
+        await login(storedFamilyId, result.memberId, result.memberName);
+      } else {
+        // New user or user without family
+        await login(null, null, name.trim());
       }
-
-      const result = await loginWithPin(familyId, memberName, enteredPin);
-      await login(familyId, result.memberId, result.memberName);
-      router.replace('/(tabs)/dashboard');
     } catch (error: any) {
-      Alert.alert('Login Failed', error.message || 'Invalid PIN. Try again.');
+      Alert.alert('Login Failed', error.message || 'Invalid name or PIN.');
       setPin('');
     } finally {
       setLoading(false);
@@ -43,24 +67,41 @@ export default function LoginScreen() {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <View style={styles.content}>
+      <ScrollView contentContainerStyle={styles.content}>
         <Text style={styles.emoji}>🏠</Text>
         <Text style={styles.title}>Home Hisab Kitab</Text>
-        <Text style={styles.subtitle}>Enter your 4-digit PIN</Text>
+        <Text style={styles.subtitle}>Enter your name and PIN to continue</Text>
 
-        <View style={styles.pinContainer}>
-          <PinInput onComplete={handlePinComplete} />
+        <View style={styles.field}>
+          <Text style={styles.label}>Your Name</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="e.g. Ali"
+            value={name}
+            onChangeText={setName}
+          />
         </View>
 
-        {loading && <Text style={styles.loadingText}>Verifying...</Text>}
+        <View style={styles.field}>
+          <Text style={styles.label}>4-Digit PIN</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="••••"
+            value={pin}
+            onChangeText={(t) => setPin(t.replace(/[^0-9]/g, '').slice(0, 4))}
+            keyboardType="number-pad"
+            maxLength={4}
+            secureTextEntry
+          />
+        </View>
 
         <Button
-          title="New here? Join Family"
-          variant="secondary"
-          onPress={() => router.push('/(auth)/setup')}
-          style={styles.setupButton}
+          title="Login"
+          onPress={handleLogin}
+          loading={loading}
+          style={styles.loginBtn}
         />
-      </View>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 }
@@ -68,10 +109,9 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
   content: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
     padding: 24,
+    paddingTop: 60,
+    alignItems: 'center',
   },
   emoji: { fontSize: 64, marginBottom: 8 },
   title: {
@@ -83,12 +123,22 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 16,
     color: Colors.textLight,
-    marginBottom: 40,
+    marginBottom: 32,
   },
-  pinContainer: { marginBottom: 24 },
-  loadingText: {
-    color: Colors.textLight,
-    marginTop: 12,
+  field: { width: '100%', marginBottom: 16 },
+  label: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: Colors.text,
+    marginBottom: 6,
   },
-  setupButton: { marginTop: 40 },
+  input: {
+    backgroundColor: Colors.card,
+    borderRadius: 12,
+    padding: 14,
+    fontSize: 16,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  loginBtn: { width: '100%', marginTop: 8 },
 });

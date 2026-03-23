@@ -9,7 +9,8 @@ interface AuthState {
 }
 
 interface AuthContextType extends AuthState {
-  login: (familyId: string, memberId: string, memberName: string) => Promise<void>;
+  login: (familyId: string | null, memberId: string | null, memberName: string) => Promise<void>;
+  setFamily: (familyId: string, memberId: string) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -19,6 +20,7 @@ const AuthContext = createContext<AuthContextType>({
   memberName: null,
   isLoading: true,
   login: async () => {},
+  setFamily: async () => {},
   logout: async () => {},
 });
 
@@ -50,20 +52,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  async function login(familyId: string, memberId: string, memberName: string) {
-    await AsyncStorage.setItem('familyId', familyId);
-    await AsyncStorage.setItem('memberId', memberId);
+  async function login(familyId: string | null, memberId: string | null, memberName: string) {
     await AsyncStorage.setItem('memberName', memberName);
+    if (familyId) await AsyncStorage.setItem('familyId', familyId);
+    if (memberId) await AsyncStorage.setItem('memberId', memberId);
     setState({ familyId, memberId, memberName, isLoading: false });
   }
 
+  async function setFamily(familyId: string, memberId: string) {
+    await AsyncStorage.setItem('familyId', familyId);
+    await AsyncStorage.setItem('memberId', memberId);
+    setState((s) => ({ ...s, familyId, memberId }));
+  }
+
   async function logout() {
-    await AsyncStorage.multiRemove(['familyId', 'memberId', 'memberName']);
+    await AsyncStorage.removeItem('memberId');
     setState({ familyId: null, memberId: null, memberName: null, isLoading: false });
   }
 
   return (
-    <AuthContext.Provider value={{ ...state, login, logout }}>
+    <AuthContext.Provider value={{ ...state, login, setFamily, logout }}>
       {children}
     </AuthContext.Provider>
   );

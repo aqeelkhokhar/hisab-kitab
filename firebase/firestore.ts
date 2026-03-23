@@ -46,10 +46,17 @@ export async function joinFamily(code: string, name: string, pin: string) {
   const familyDoc = snapshot.docs[0];
   const familyId = familyDoc.id;
 
-  // Check if name already taken
+  // Check if name already exists — if so, verify PIN to re-join
   const membersSnap = await getDocs(collection(db, 'families', familyId, 'members'));
-  const existingNames = membersSnap.docs.map((d) => d.data().name.toLowerCase());
-  if (existingNames.includes(name.toLowerCase())) {
+  const existingMember = membersSnap.docs.find(
+    (d) => d.data().name.toLowerCase() === name.toLowerCase()
+  );
+
+  if (existingMember) {
+    if (existingMember.data().pin === pin) {
+      // Same person re-joining — return existing member
+      return { familyId, memberId: existingMember.id };
+    }
     throw new Error('This name is already taken in this family.');
   }
 
@@ -79,6 +86,14 @@ export async function loginWithPin(familyId: string, name: string, pin: string) 
 export async function getFamilyMembers(familyId: string) {
   const snap = await getDocs(collection(db, 'families', familyId, 'members'));
   return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+}
+
+export async function getFamilyCode(familyId: string): Promise<string | null> {
+  const snap = await getDoc(doc(db, 'families', familyId));
+  if (snap.exists()) {
+    return snap.data().code || null;
+  }
+  return null;
 }
 
 export async function updatePushToken(familyId: string, memberId: string, token: string) {

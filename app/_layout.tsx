@@ -11,7 +11,7 @@ export { ErrorBoundary } from 'expo-router';
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
 function RootLayoutNav() {
-  const { familyId, isLoading } = useAuth();
+  const { memberName, isLoading } = useAuth();
   const segments = useSegments();
   const router = useRouter();
 
@@ -20,12 +20,12 @@ function RootLayoutNav() {
 
     const inAuthGroup = segments[0] === '(auth)';
 
-    if (!familyId && !inAuthGroup) {
+    if (!memberName && !inAuthGroup) {
       router.replace('/(auth)/login');
-    } else if (familyId && inAuthGroup) {
+    } else if (memberName && inAuthGroup) {
       router.replace('/(tabs)/dashboard');
     }
-  }, [familyId, isLoading, segments]);
+  }, [memberName, isLoading, segments]);
 
   return (
     <Stack

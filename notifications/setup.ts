@@ -3,16 +3,20 @@ import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 import { updatePushToken } from '../firebase/firestore';
 
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: true,
-    shouldShowBanner: true,
-    shouldShowList: true,
-    shouldPlaySoundInForeground: true,
-  }),
-});
+try {
+  Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldShowAlert: true,
+      shouldPlaySound: true,
+      shouldSetBadge: true,
+      shouldShowBanner: true,
+      shouldShowList: true,
+      shouldPlaySoundInForeground: true,
+    }),
+  });
+} catch (e) {
+  console.log('Notifications not supported in this environment:', e);
+}
 
 export async function registerForPushNotifications(familyId: string, memberId: string) {
   try {
